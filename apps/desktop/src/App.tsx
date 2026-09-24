@@ -45,15 +45,7 @@ interface ModelInfo {
 // ── Helpers ──────────────────────────────────────────────────────────────────
 const nadar = (window as any).nadar ?? null;
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2);
-const toolIcon = (name: string) => {
-  if (name.includes('read')) return '📖';
-  if (name.includes('write') || name.includes('edit')) return '✏️';
-  if (name.includes('bash') || name.includes('run')) return '⚡';
-  if (name.includes('grep') || name.includes('glob') || name.includes('search')) return '🔍';
-  if (name.includes('list')) return '📂';
-  if (name.startsWith('mcp__')) return '🔌';
-  return '🔧';
-};
+
 
 // ── Main App ─────────────────────────────────────────────────────────────────
 export default function App() {
@@ -515,16 +507,12 @@ function ToolCard({ msg }: { msg: Msg }) {
   return (
     <div className="tool-card">
       <div className="tool-card-header" onClick={() => setExpanded(e => !e)} style={{ cursor: 'pointer' }}>
-        <span className="tool-card-icon">{toolIcon(name)}</span>
-        <span>{name}</span>
+        <span>&gt; {name}</span>
         {extra?.ok !== undefined && (
-          <span style={{ marginLeft: 'auto', color: extra.ok ? 'var(--green)' : 'var(--red)', fontSize: 11 }}>
-            {extra.ok ? '✓ ok' : '✗ failed'}
+          <span style={{ color: extra.ok ? 'var(--green)' : 'var(--red)', fontSize: 11 }}>
+            {extra.ok ? 'ok' : 'failed'}
           </span>
         )}
-        <span style={{ marginLeft: extra?.ok !== undefined ? 0 : 'auto', color: 'var(--text-2)' }}>
-          {expanded ? '▲' : '▼'}
-        </span>
       </div>
 
       {expanded && (
@@ -535,7 +523,7 @@ function ToolCard({ msg }: { msg: Msg }) {
           {extra?.diff && <DiffView before={extra.diff.before} after={extra.diff.after} />}
           {extra?.result && (
             <div className={`tool-result ${extra.ok ? 'ok' : 'fail'}`}>
-              {extra.ok ? '✓' : '✗'} {extra.result.slice(0, 300)}{extra.result.length > 300 ? '...' : ''}
+              {extra.result.slice(0, 300)}{extra.result.length > 300 ? '...' : ''}
             </div>
           )}
         </div>
