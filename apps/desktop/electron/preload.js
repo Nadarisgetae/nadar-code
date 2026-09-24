@@ -18,6 +18,7 @@ contextBridge.exposeInMainWorld('nadar', {
   setModel: (model) => ipcRenderer.invoke('set-model', model),
   fetchModels: () => ipcRenderer.invoke('fetch-models'),
   getKeyStatus: () => ipcRenderer.invoke('get-key-status'),
+  getPluginCommands: () => ipcRenderer.invoke('get-plugin-commands'),
 
   // Project management
   chooseProject: () => ipcRenderer.invoke('choose-project'),

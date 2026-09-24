@@ -13,6 +13,7 @@ export interface LoadedPlugin {
   name: string;
   path: string;
   skills: string[]; // contents of SKILL.md files
+  commands: { cmd: string; desc: string }[];
 }
 
 export class PluginLoader {
@@ -56,6 +57,21 @@ export class PluginLoader {
 
       // 2. Load Skills
       const skills: string[] = [];
+      const commands: { cmd: string; desc: string }[] = [];
+      
+      const commandsDir = path.join(claudeDir, "commands");
+      if (fs.existsSync(commandsDir)) {
+        const cmdEntries = fs.readdirSync(commandsDir, { withFileTypes: true });
+        for (const entry of cmdEntries) {
+          if (entry.isFile() && entry.name.endsWith(".md")) {
+            const cmdName = "/" + entry.name.replace(".md", "");
+            const content = fs.readFileSync(path.join(commandsDir, entry.name), "utf-8");
+            const firstLine = content.split("\n").find(l => l.trim().length > 0)?.trim().replace(/^#+\s*/, "");
+            commands.push({ cmd: cmdName, desc: firstLine || `Plugin command: ${cmdName}` });
+          }
+        }
+      }
+
       const skillsDir = path.join(claudeDir, "skills");
       if (fs.existsSync(skillsDir)) {
         const skillEntries = fs.readdirSync(skillsDir, { withFileTypes: true });
@@ -75,7 +91,8 @@ export class PluginLoader {
       this.loadedPlugins.push({
         name: manifest.name || pluginName,
         path: pluginPath,
-        skills
+        skills,
+        commands
       });
 
     } catch (err: any) {
@@ -85,5 +102,9 @@ export class PluginLoader {
 
   getAllSkills(): string[] {
     return this.loadedPlugins.flatMap(p => p.skills);
+  }
+
+  getAllCommands(): { cmd: string; desc: string }[] {
+    return this.loadedPlugins.flatMap(p => p.commands);
   }
 }

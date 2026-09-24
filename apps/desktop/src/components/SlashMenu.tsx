@@ -1,4 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
+
+const nadar = (window as any).nadar ?? null;
 
 export const COMMANDS = [
   // Antigravity commands
@@ -22,10 +24,26 @@ interface SlashMenuProps {
 
 export default function SlashMenu({ input, onSelect, onClose }: SlashMenuProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [pluginCommands, setPluginCommands] = useState<{cmd: string, desc: string}[]>([]);
+
+  useEffect(() => {
+    if (nadar && nadar.getPluginCommands) {
+      nadar.getPluginCommands().then((cmds: any) => {
+        if (Array.isArray(cmds)) {
+          setPluginCommands(cmds);
+        }
+      }).catch(console.error);
+    }
+  }, []);
+
+  const allCommands = useMemo(() => {
+    // Merge built-in commands with plugin commands
+    return [...COMMANDS, ...pluginCommands];
+  }, [pluginCommands]);
 
   // Match anything after the slash to filter
   const query = input.startsWith('/') ? input.slice(1).toLowerCase() : '';
-  const filtered = COMMANDS.filter(c => c.cmd.toLowerCase().includes(query));
+  const filtered = allCommands.filter(c => c.cmd.toLowerCase().includes(query));
 
   useEffect(() => {
     setSelectedIndex(0);

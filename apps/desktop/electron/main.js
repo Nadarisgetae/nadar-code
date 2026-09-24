@@ -234,6 +234,13 @@ ipcMain.handle('new-chat', async () => {
   return [];
 });
 
+ipcMain.handle('get-plugin-commands', async () => {
+  if (agent && agent.pluginLoader) {
+    return agent.pluginLoader.getAllCommands();
+  }
+  return [];
+});
+
 // ─── IDE Handlers ─────────────────────────────────────────────────────────────
 ipcMain.handle('list-dir', async (_event, dirPath) => {
   const target = dirPath || cwd;
