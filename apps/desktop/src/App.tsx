@@ -4,6 +4,7 @@ import 'allotment/dist/style.css';
 import './index.css';
 import DiffView from './DiffView';
 import Explorer from './components/Explorer';
+import RecentChats from './components/RecentChats';
 import Editor from './components/Editor';
 import TerminalPane from './components/TerminalPane';
 import SlashMenu from './components/SlashMenu';
@@ -236,14 +237,26 @@ export default function App() {
       {/* ── Body ── */}
       <div className="main">
         <Allotment>
-          {/* ── Pane 1: Explorer ── */}
+          {/* ── Pane 1: Explorer & Chats ── */}
           <Allotment.Pane preferredSize={250} minSize={200}>
-            <div className="sidebar" style={{ width: '100%', height: '100%', borderRight: 'none' }}>
-              <div className="sidebar-section" style={{ paddingBottom: 8 }}>
-                <div className="sidebar-title">Explorer</div>
-              </div>
-              <Explorer cwd={config.cwd} onFileSelect={handleFileSelect} />
-            </div>
+            <Allotment vertical>
+              <Allotment.Pane preferredSize={300} minSize={150}>
+                <div className="sidebar" style={{ width: '100%', height: '100%', borderRight: 'none', borderBottom: '1px solid var(--border)' }}>
+                  <RecentChats 
+                    cwd={config.cwd} 
+                    onChatSwitch={(history) => setMessages(history || [])} 
+                  />
+                </div>
+              </Allotment.Pane>
+              <Allotment.Pane minSize={150}>
+                <div className="sidebar" style={{ width: '100%', height: '100%', borderRight: 'none' }}>
+                  <div className="sidebar-section" style={{ paddingBottom: 8 }}>
+                    <div className="sidebar-title">Explorer</div>
+                  </div>
+                  <Explorer cwd={config.cwd} onFileSelect={handleFileSelect} />
+                </div>
+              </Allotment.Pane>
+            </Allotment>
           </Allotment.Pane>
 
           {/* ── Pane 2 & Terminal ── */}

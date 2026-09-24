@@ -23,24 +23,41 @@ const defaultChatsDir = "C:\\chats";
 let cwd = fs.existsSync(defaultChatsDir) ? defaultChatsDir : os.homedir();
 let ptyProcess = null;
 
+let currentChatId = Date.now().toString();
+
 // ─── Persistence helpers ──────────────────────────────────────────────────────
-function historyPath(projectCwd) {
+function historyDir(projectCwd) {
   const safe = projectCwd.replace(/[^a-zA-Z0-9]/g, '_');
-  return path.join(os.homedir(), '.nadar-code', 'history', `${safe}.json`);
+  return path.join(os.homedir(), '.nadar-code', 'history', safe);
 }
 
-function saveHistory(projectCwd, messages) {
-  const p = historyPath(projectCwd);
-  fs.mkdirSync(path.dirname(p), { recursive: true });
+function saveHistory(projectCwd, chatId, messages) {
+  const dir = historyDir(projectCwd);
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  const p = path.join(dir, `${chatId}.json`);
   fs.writeFileSync(p, JSON.stringify(messages, null, 2), 'utf-8');
 }
 
-function loadHistoryFromDisk(projectCwd) {
+function loadHistoryFromDisk(projectCwd, chatId) {
   try {
-    const p = historyPath(projectCwd);
+    const p = path.join(historyDir(projectCwd), `${chatId}.json`);
     if (fs.existsSync(p)) return JSON.parse(fs.readFileSync(p, 'utf-8'));
   } catch {}
   return [];
+}
+
+function listChats(projectCwd) {
+  const dir = historyDir(projectCwd);
+  if (!fs.existsSync(dir)) return [];
+  const files = fs.readdirSync(dir).filter(f => f.endsWith('.json'));
+  const chats = files.map(file => {
+    const p = path.join(dir, file);
+    const msgs = JSON.parse(fs.readFileSync(p, 'utf-8'));
+    const firstUserMsg = msgs.find(m => m.role === 'user');
+    const title = firstUserMsg ? firstUserMsg.content.slice(0, 30) + (firstUserMsg.content.length > 30 ? '...' : '') : 'New Chat';
+    return { id: file.replace('.json', ''), title, timestamp: fs.statSync(p).mtimeMs };
+  });
+  return chats.sort((a, b) => b.timestamp - a.timestamp);
 }
 
 // ─── Core initialisation ──────────────────────────────────────────────────────
@@ -68,11 +85,18 @@ async function initializeCore(newCwd) {
 
   agent = new Agent(keyManager, config, cwd, eventBus, approvalProvider);
   await agent.init();
-  const history = loadHistoryFromDisk(cwd);
-  if (history && history.length > 0) {
-    agent.setHistory(history);
+  
+  // Set to latest chat or create new
+  const chats = listChats(cwd);
+  if (chats.length > 0) {
+    currentChatId = chats[0].id;
+    const history = loadHistoryFromDisk(cwd, currentChatId);
+    if (history.length > 0) agent.setHistory(history);
+  } else {
+    currentChatId = Date.now().toString();
   }
-  console.log(`[main] Core initialised. CWD=${cwd}`);
+  
+  console.log(`[main] Core initialised. CWD=${cwd} Chat=${currentChatId}`);
 }
 
 // ─── Window ───────────────────────────────────────────────────────────────────
@@ -129,6 +153,7 @@ ipcMain.handle('send-message', async (_event, message) => {
     eventBus.emit({ type: 'system:error', message: err.message });
   } finally {
     eventBus.emit({ type: 'agent:done' });
+    saveHistory(cwd, currentChatId, agent.getHistory());
   }
 });
 
@@ -183,13 +208,30 @@ ipcMain.handle('choose-project', async () => {
 });
 
 ipcMain.handle('load-history', async () => {
-  return loadHistoryFromDisk(cwd);
+  return loadHistoryFromDisk(cwd, currentChatId);
 });
 
 ipcMain.handle('clear-history', async () => {
   if (agent) agent.clearHistory();
-  const p = historyPath(cwd);
+  const p = path.join(historyDir(cwd), `${currentChatId}.json`);
   if (fs.existsSync(p)) fs.unlinkSync(p);
+});
+
+ipcMain.handle('list-chats', async () => {
+  return listChats(cwd);
+});
+
+ipcMain.handle('switch-chat', async (_event, chatId) => {
+  currentChatId = chatId;
+  const history = loadHistoryFromDisk(cwd, currentChatId);
+  if (agent) agent.setHistory(history);
+  return history;
+});
+
+ipcMain.handle('new-chat', async () => {
+  currentChatId = Date.now().toString();
+  if (agent) agent.clearHistory();
+  return [];
 });
 
 // ─── IDE Handlers ─────────────────────────────────────────────────────────────

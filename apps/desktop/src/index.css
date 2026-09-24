@@ -64,6 +64,11 @@ body {
 
 #root { height: 100%; }
 
+.chat-list-item:hover {
+  background: var(--bg-2);
+  color: var(--text-0) !important;
+}
+
 /* ── Layout ── */
 .app { display: flex; flex-direction: column; height: 100%; }
 

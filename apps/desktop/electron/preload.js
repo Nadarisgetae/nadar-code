@@ -26,6 +26,9 @@ contextBridge.exposeInMainWorld('nadar', {
   // Conversation persistence
   loadHistory: () => ipcRenderer.invoke('load-history'),
   clearHistory: () => ipcRenderer.invoke('clear-history'),
+  listChats: () => ipcRenderer.invoke('list-chats'),
+  switchChat: (chatId) => ipcRenderer.invoke('switch-chat', chatId),
+  newChat: () => ipcRenderer.invoke('new-chat'),
 
   // IDE Features
   listDir: (dirPath) => ipcRenderer.invoke('list-dir', dirPath),
