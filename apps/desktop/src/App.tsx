@@ -70,6 +70,7 @@ export default function App() {
   const [activeFile, setActiveFile] = useState<string | null>(null);
   const [theme, setTheme] = useState<string>(localStorage.getItem('app-theme') || 'dark');
   const [customAccent, setCustomAccent] = useState<string>(localStorage.getItem('app-custom-accent') || '');
+  const [customTextColor, setCustomTextColor] = useState<string>(localStorage.getItem('app-custom-text') || '');
   const transcriptRef = useRef<HTMLDivElement>(null);
 
   // ── IPC Subscriptions ─────────────────────────────────────────────────────
@@ -144,6 +145,16 @@ export default function App() {
       localStorage.removeItem('app-custom-accent');
     }
   }, [customAccent]);
+
+  useEffect(() => {
+    if (customTextColor) {
+      document.documentElement.style.setProperty('--text-0', customTextColor);
+      localStorage.setItem('app-custom-text', customTextColor);
+    } else {
+      document.documentElement.style.removeProperty('--text-0');
+      localStorage.removeItem('app-custom-text');
+    }
+  }, [customTextColor]);
 
   // ── Send ──────────────────────────────────────────────────────────────────
   const handleSend = useCallback(() => {
@@ -444,6 +455,14 @@ export default function App() {
                 <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
                   <input type="color" value={customAccent || '#7c6afb'} onChange={e => setCustomAccent(e.target.value)} style={{ width: 40, height: 40, padding: 0, border: 'none', borderRadius: 4, cursor: 'pointer' }} />
                   <button className="settings-btn" onClick={() => setCustomAccent('')} disabled={!customAccent}>Reset Default</button>
+                </div>
+              </div>
+
+              <div className="settings-field">
+                <label>Custom Text Color</label>
+                <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                  <input type="color" value={customTextColor || '#f0f0f5'} onChange={e => setCustomTextColor(e.target.value)} style={{ width: 40, height: 40, padding: 0, border: 'none', borderRadius: 4, cursor: 'pointer' }} />
+                  <button className="settings-btn" onClick={() => setCustomTextColor('')} disabled={!customTextColor}>Reset Default</button>
                 </div>
               </div>
 

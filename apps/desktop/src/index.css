@@ -85,9 +85,7 @@ body {
 .topbar-brand {
   font-weight: 600;
   font-size: 15px;
-  background: linear-gradient(135deg, var(--accent), #a78bfa);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: var(--accent);
   letter-spacing: -0.3px;
 }
 
