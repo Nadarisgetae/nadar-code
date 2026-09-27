@@ -57,6 +57,7 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [activeSettingsTab, setActiveSettingsTab] = useState<'models' | 'appearance' | 'advanced' | 'plugins'>('models');
   const [config, setConfig] = useState<AppConfig>({ mode: 'manual', model: '', cwd: '', keyCount: 0 });
+  const [theme, setTheme] = useState(() => localStorage.getItem('app-theme') || 'dark');
   const [installedPlugins, setInstalledPlugins] = useState<{name: string, path: string, skillCount: number, commandCount: number}[]>([]);
 
   const [keyStatusData, setKeyStatusData] = useState<any[]>([]);
@@ -199,6 +200,11 @@ export default function App() {
       localStorage.removeItem('app-custom-text');
     }
   }, [customTextColor]);
+
+  useEffect(() => {
+    localStorage.setItem('app-theme', theme);
+    document.body.className = theme !== 'dark' ? `theme-${theme}` : '';
+  }, [theme]);
   // ── Commands ──────────────────────────────────────────────────────────────
   useEffect(() => {
     if (showCommandsModal) {
@@ -634,7 +640,20 @@ export default function App() {
         {activeSettingsTab === 'appearance' && (
               <div className="settings-section">
                 <h2>Appearance</h2>
-                <p style={{ fontSize: '13px', color: 'var(--text-1)' }}>Coming soon: Theme customization and layout preferences.</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '16px' }}>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '8px', fontSize: '13px', color: 'var(--text-1)' }}>Color Theme</label>
+                    <select 
+                      value={theme}
+                      onChange={(e) => setTheme(e.target.value)}
+                      style={{ padding: '8px 12px', background: 'var(--bg-1)', color: 'var(--text-0)', border: '1px solid var(--border)', borderRadius: '6px', fontSize: '13px', width: '200px', cursor: 'pointer' }}
+                    >
+                      <option value="dark">Dark (Default)</option>
+                      <option value="light">Light</option>
+                      <option value="eye-saver">Eye Saver (Sepia)</option>
+                    </select>
+                  </div>
+                </div>
               </div>
             )}
 
