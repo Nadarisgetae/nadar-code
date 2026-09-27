@@ -7,6 +7,7 @@ export interface PluginManifest {
   name: string;
   version?: string;
   mcpServers?: Record<string, { command: string; args: string[]; env?: Record<string, string> }>;
+  [key: string]: any;
 }
 
 export interface LoadedPlugin {
@@ -59,34 +60,49 @@ export class PluginLoader {
       const skills: string[] = [];
       const commands: { cmd: string; desc: string }[] = [];
       
-      const commandsDir = path.join(claudeDir, "commands");
+      const commandsDir = path.join(pluginPath, "commands");
       if (fs.existsSync(commandsDir)) {
         const cmdEntries = fs.readdirSync(commandsDir, { withFileTypes: true });
         for (const entry of cmdEntries) {
           if (entry.isFile() && entry.name.endsWith(".md")) {
-            const cmdName = "/" + entry.name.replace(".md", "");
+            const cmdName = entry.name.replace(".md", "");
             const content = fs.readFileSync(path.join(commandsDir, entry.name), "utf-8");
             const firstLine = content.split("\n").find(l => l.trim().length > 0)?.trim().replace(/^#+\s*/, "");
             commands.push({ cmd: cmdName, desc: firstLine || `Plugin command: ${cmdName}` });
           }
         }
       }
-
-      const skillsDir = path.join(claudeDir, "skills");
-      if (fs.existsSync(skillsDir)) {
-        const skillEntries = fs.readdirSync(skillsDir, { withFileTypes: true });
-        for (const skill of skillEntries) {
-          if (skill.isFile() && skill.name === "SKILL.md") {
-             const content = fs.readFileSync(path.join(skillsDir, skill.name), "utf-8");
-             skills.push(content);
-          } else if (skill.isDirectory()) {
-             const subSkillPath = path.join(skillsDir, skill.name, "SKILL.md");
-             if (fs.existsSync(subSkillPath)) {
-                 skills.push(fs.readFileSync(subSkillPath, "utf-8"));
-             }
+      
+      if (manifest.commands && Array.isArray(manifest.commands)) {
+        for (const cmd of manifest.commands) {
+          if (!commands.find(c => c.cmd === cmd.name)) {
+            commands.push({ cmd: cmd.name.replace(/^\//, ''), desc: cmd.description || "" });
+          }
+        }
+      } else if (manifest.slashCommands && Array.isArray(manifest.slashCommands)) {
+        for (const cmd of manifest.slashCommands) {
+          const cmdName = cmd.command.replace(/^\//, '');
+          if (!commands.find(c => c.cmd === cmdName)) {
+            commands.push({ cmd: cmdName, desc: cmd.description || "" });
           }
         }
       }
+
+      const skillsDir = path.join(pluginPath, "skills");
+      
+      const findSkills = (dir: string) => {
+        if (!fs.existsSync(dir)) return;
+        const entries = fs.readdirSync(dir, { withFileTypes: true });
+        for (const entry of entries) {
+          if (entry.isDirectory()) {
+            findSkills(path.join(dir, entry.name));
+          } else if (entry.isFile() && entry.name === "SKILL.md") {
+            skills.push(fs.readFileSync(path.join(dir, entry.name), "utf-8"));
+          }
+        }
+      };
+      
+      findSkills(skillsDir);
 
       this.loadedPlugins.push({
         name: manifest.name || pluginName,
@@ -106,5 +122,14 @@ export class PluginLoader {
 
   getAllCommands(): { cmd: string; desc: string }[] {
     return this.loadedPlugins.flatMap(p => p.commands);
+  }
+
+  getLoadedPlugins(): { name: string; path: string; skillCount: number; commandCount: number }[] {
+    return this.loadedPlugins.map(p => ({
+      name: p.name,
+      path: p.path,
+      skillCount: p.skills.length,
+      commandCount: p.commands.length
+    }));
   }
 }

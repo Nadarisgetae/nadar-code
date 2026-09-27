@@ -4,12 +4,29 @@ contextBridge.exposeInMainWorld('nadar', {
   // Messaging
   sendMessage: (msg) => ipcRenderer.invoke('send-message', msg),
 
-  // Events from core engine
-  onCoreEvent: (callback) => ipcRenderer.on('core-event', (event, ...args) => callback(...args)),
-  onConfigUpdate: (callback) => ipcRenderer.on('config-update', (event, ...args) => callback(...args)),
+  // Window Controls
+  minimizeWindow: () => ipcRenderer.send('window-minimize'),
+  maximizeWindow: () => ipcRenderer.send('window-maximize'),
+  closeWindow: () => ipcRenderer.send('window-close'),
+
+  // Events from core engine — all return a cleanup fn to remove the listener
+  onCoreEvent: (callback) => {
+    const listener = (_event, ...args) => callback(...args);
+    ipcRenderer.on('core-event', listener);
+    return () => ipcRenderer.removeListener('core-event', listener);
+  },
+  onConfigUpdate: (callback) => {
+    const listener = (_event, ...args) => callback(...args);
+    ipcRenderer.on('config-update', listener);
+    return () => ipcRenderer.removeListener('config-update', listener);
+  },
 
   // Approval modal
-  onApprovalRequest: (callback) => ipcRenderer.on('approval-request', (event, ...args) => callback(...args)),
+  onApprovalRequest: (callback) => {
+    const listener = (_event, ...args) => callback(...args);
+    ipcRenderer.on('approval-request', listener);
+    return () => ipcRenderer.removeListener('approval-request', listener);
+  },
   sendApprovalResponse: (decision) => ipcRenderer.send('approval-response', decision),
 
   // Config & settings
@@ -18,11 +35,19 @@ contextBridge.exposeInMainWorld('nadar', {
   setModel: (model) => ipcRenderer.invoke('set-model', model),
   fetchModels: () => ipcRenderer.invoke('fetch-models'),
   getKeyStatus: () => ipcRenderer.invoke('get-key-status'),
+  getKeyStatusData: () => ipcRenderer.invoke('get-key-status-data'),
+  refreshKeysCheck: () => ipcRenderer.invoke('refresh-keys-check'),
   getPluginCommands: () => ipcRenderer.invoke('get-plugin-commands'),
+  getLoadedPlugins: () => ipcRenderer.invoke('get-loaded-plugins'),
+  reloadPlugins: () => ipcRenderer.invoke('reload-plugins'),
 
   // Project management
   chooseProject: () => ipcRenderer.invoke('choose-project'),
-  onProjectChanged: (callback) => ipcRenderer.on('project-changed', (event, ...args) => callback(...args)),
+  onProjectChanged: (callback) => {
+    const listener = (_event, ...args) => callback(...args);
+    ipcRenderer.on('project-changed', listener);
+    return () => ipcRenderer.removeListener('project-changed', listener);
+  },
 
   // Conversation persistence
   loadHistory: () => ipcRenderer.invoke('load-history'),
@@ -46,3 +71,4 @@ contextBridge.exposeInMainWorld('nadar', {
     return () => ipcRenderer.removeListener('terminal.data', listener);
   },
 });
+

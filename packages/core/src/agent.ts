@@ -35,15 +35,25 @@ export class Agent {
     this.resetSystemPrompt();
   }
 
-  resetSystemPrompt(): void {
+  resetSystemPrompt(userInput?: string): void {
     const notesPath = path.join(this.cwd, "NADAR.md");
     const notes = fs.existsSync(notesPath) ? fs.readFileSync(notesPath, "utf-8") : null;
     let systemPrompt = buildSystemPrompt(this.config.mode, this.cwd, notes);
-    
-    const skills = this.pluginLoader.getAllSkills();
-    if (skills.length > 0) {
-      systemPrompt += "\n\n# Loaded Skills:\n" + skills.join("\n\n---\n\n");
+
+    // Only inject plugin skills when the user explicitly invokes a matching slash command
+    if (userInput) {
+      const trimmed = userInput.trim();
+      if (trimmed.startsWith("/")) {
+        const invokedCmd = trimmed.split(/\s+/)[0].slice(1).toLowerCase(); // e.g. "research"
+        const matchedPlugin = this.pluginLoader.loadedPlugins.find(p =>
+          p.commands.some(c => c.cmd.toLowerCase() === invokedCmd)
+        );
+        if (matchedPlugin && matchedPlugin.skills.length > 0) {
+          systemPrompt += "\n\n# Active Plugin Skills:\n" + matchedPlugin.skills.join("\n\n---\n\n");
+        }
+      }
     }
+
     const rest = this.messages.filter((m) => m.role !== "system");
     this.messages = [{ role: "system", content: systemPrompt }, ...rest];
   }
@@ -63,6 +73,7 @@ export class Agent {
   }
 
   async runTurn(userInput: string): Promise<void> {
+    this.resetSystemPrompt(userInput);
     this.messages.push({ role: "user", content: userInput });
 
     const builtinTools = toolsForMode(this.config.mode);

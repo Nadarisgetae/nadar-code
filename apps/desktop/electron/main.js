@@ -13,6 +13,13 @@ import {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Fix GPU cache errors: redirect userData to a writable location
+app.setPath('userData', path.join(os.homedir(), '.nadar-code', 'electron-data'));
+
+// Suppress GPU disk-cache errors on restricted directories (e.g. C:\chats)
+app.commandLine.appendSwitch('disable-gpu-shader-disk-cache');
+app.commandLine.appendSwitch('disable-gpu-cache');
+
 // ─── State ───────────────────────────────────────────────────────────────────
 let mainWindow = null;
 let agent = null;
@@ -108,6 +115,8 @@ function createWindow() {
     minWidth: 800,
     minHeight: 600,
     title: 'Nadar Code',
+    frame: false,
+    titleBarStyle: 'hidden',
     icon: fs.existsSync(iconPath) ? iconPath : undefined,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -121,12 +130,15 @@ function createWindow() {
   const distIndex = path.join(__dirname, '../dist/index.html');
 
   if (isDev) {
-    mainWindow.loadURL('http://localhost:5173');
+    // Try 5173 first; fall back to 5174 if Vite picked a different port
+    const viteUrl = process.env.VITE_DEV_SERVER_URL || 'http://localhost:5173';
+    mainWindow.loadURL(viteUrl).catch(() => mainWindow.loadURL('http://localhost:5174'));
     mainWindow.webContents.openDevTools({ mode: 'detach' });
   } else if (fs.existsSync(distIndex)) {
     mainWindow.loadFile(distIndex);
   } else {
-    mainWindow.loadURL('http://localhost:5173');
+    const viteUrl = process.env.VITE_DEV_SERVER_URL || 'http://localhost:5173';
+    mainWindow.loadURL(viteUrl).catch(() => mainWindow.loadURL('http://localhost:5174'));
     mainWindow.webContents.openDevTools({ mode: 'detach' });
   }
 }
@@ -142,6 +154,13 @@ app.whenReady().then(async () => {
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
 });
+
+ipcMain.on('window-minimize', () => mainWindow?.minimize());
+ipcMain.on('window-maximize', () => {
+  if (mainWindow?.isMaximized()) mainWindow?.unmaximize();
+  else mainWindow?.maximize();
+});
+ipcMain.on('window-close', () => mainWindow?.close());
 
 // ─── IPC handlers ─────────────────────────────────────────────────────────────
 
@@ -194,6 +213,17 @@ ipcMain.handle('get-key-status', async () => {
   return keyManager ? keyManager.status() : 'No key manager loaded.';
 });
 
+ipcMain.handle('get-key-status-data', async () => {
+  return keyManager ? keyManager.statusData() : [];
+});
+
+ipcMain.handle('refresh-keys-check', async () => {
+  if (keyManager && typeof keyManager.checkAllKeys === 'function') {
+    await keyManager.checkAllKeys();
+  }
+  return true;
+});
+
 ipcMain.handle('choose-project', async () => {
   const result = await dialog.showOpenDialog(mainWindow, {
     properties: ['openDirectory'],
@@ -236,6 +266,22 @@ ipcMain.handle('new-chat', async () => {
 
 ipcMain.handle('get-plugin-commands', async () => {
   if (agent && agent.pluginLoader) {
+    return agent.pluginLoader.getAllCommands();
+  }
+  return [];
+});
+
+ipcMain.handle('get-loaded-plugins', async () => {
+  if (agent && agent.pluginLoader) {
+    return agent.pluginLoader.getLoadedPlugins();
+  }
+  return [];
+});
+
+ipcMain.handle('reload-plugins', async () => {
+  if (agent && agent.pluginLoader) {
+    await agent.pluginLoader.loadAll();
+    agent.resetSystemPrompt();
     return agent.pluginLoader.getAllCommands();
   }
   return [];

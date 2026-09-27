@@ -5,6 +5,7 @@ interface FileNode {
   name: string;
   isDirectory: boolean;
   path: string;
+  gitStatus?: 'M' | 'U';
 }
 
 interface ExplorerProps {
@@ -21,7 +22,13 @@ function TreeNode({ node, onFileSelect, depth }: { node: FileNode; onFileSelect:
     if (node.isDirectory) {
       if (!isOpen) {
         const items = await nadar.listDir(node.path);
-        setChildren(items);
+        // Mock some git status for UI demonstration
+        const mockedItems = items.map((i: any) => {
+          if (!i.isDirectory && i.name.endsWith('.tsx')) return { ...i, gitStatus: 'M' };
+          if (!i.isDirectory && i.name.endsWith('.json')) return { ...i, gitStatus: 'U' };
+          return i;
+        });
+        setChildren(mockedItems);
       }
       setIsOpen(!isOpen);
     } else {
@@ -50,9 +57,12 @@ function TreeNode({ node, onFileSelect, depth }: { node: FileNode; onFileSelect:
           if (['png', 'jpg', 'jpeg', 'svg', 'gif'].includes(ext || '')) return <ImageIcon size={14} color="var(--green)" />;
           return <File size={14} color="var(--text-2)" />;
         })()}
-        <span style={{ fontSize: 13, color: 'var(--text-1)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        <span style={{ flex: 1, fontSize: 13, color: node.gitStatus === 'M' ? 'var(--blue, #58a6ff)' : node.gitStatus === 'U' ? 'var(--green)' : 'var(--text-1)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
           {node.name}
         </span>
+        {node.gitStatus && (
+          <span className={`git-badge ${node.gitStatus}`}>{node.gitStatus}</span>
+        )}
       </div>
       {isOpen && node.isDirectory && (
         <div>
@@ -71,12 +81,19 @@ export default function Explorer({ cwd, onFileSelect }: ExplorerProps) {
 
   useEffect(() => {
     if (cwd && nadar) {
-      nadar.listDir(cwd).then(setItems);
+      nadar.listDir(cwd).then((dirs: any[]) => {
+        const mockedDirs = dirs.map(d => {
+            if (!d.isDirectory && d.name.endsWith('.tsx')) return { ...d, gitStatus: 'M' };
+            if (!d.isDirectory && d.name.endsWith('.json')) return { ...d, gitStatus: 'U' };
+            return d;
+        });
+        setItems(mockedDirs);
+      });
     }
   }, [cwd]);
 
   return (
-    <div style={{ overflowY: 'auto', overflowX: 'hidden', height: '100%', paddingTop: 10 }}>
+    <div className="explorer-container">
       {items.map(item => (
         <TreeNode key={item.path} node={item} onFileSelect={onFileSelect} depth={0} />
       ))}

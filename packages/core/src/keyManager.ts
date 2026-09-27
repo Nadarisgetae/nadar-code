@@ -179,6 +179,42 @@ export class KeyManager {
     }
   }
 
+  async checkAllKeys(): Promise<void> {
+    await Promise.all(this.keys.map(async (k) => {
+      try {
+        const res = await fetch("https://openrouter.ai/api/v1/auth/key", {
+          headers: { "Authorization": `Bearer ${k.key}` }
+        });
+        if (res.status === 200) {
+          const data = (await res.json()) as any;
+          if (data && data.data && typeof data.data.limit === 'number' && typeof data.data.usage === 'number') {
+            if (data.data.usage >= data.data.limit) {
+              k.cooldownUntil = Date.now() + 24 * 3600 * 1000;
+              k.lastFailure = "out_of_credits";
+              k.disabled = false;
+            } else {
+              k.cooldownUntil = 0;
+              k.disabled = false;
+              k.lastFailure = undefined;
+            }
+          } else {
+             k.cooldownUntil = 0;
+             k.disabled = false;
+             k.lastFailure = undefined;
+          }
+        } else if (res.status === 401 || res.status === 403) {
+          k.disabled = true;
+          k.lastFailure = "invalid";
+        } else if (res.status === 402) {
+          k.cooldownUntil = Date.now() + 24 * 3600 * 1000;
+          k.lastFailure = "out_of_credits";
+        }
+      } catch (e) {
+        // network error, ignore
+      }
+    }));
+  }
+
   allExhausted(): boolean {
     return this.keys.every((k) => !this.usable(k));
   }

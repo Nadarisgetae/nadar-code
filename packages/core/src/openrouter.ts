@@ -133,9 +133,7 @@ export async function chatCompletion(
     if (!res.ok) {
       // 4xx that we don't specifically handle (403, 404, etc.)
       const text = await res.text().catch(() => "");
-      lastError = `[${res.status}] OpenRouter error: ${text.slice(0, 300)}`;
-      // Don't rotate key — this is likely a request problem not a key problem
-      break;
+      throw new Error(`[${res.status}] OpenRouter error: ${text.slice(0, 300)}`);
     }
 
     // ── Parse response ───────────────────────────────────────────────────────
@@ -157,8 +155,7 @@ export async function chatCompletion(
         continue;
       }
       // Other model errors aren't key problems — surface to caller
-      lastError = `OpenRouter model error: ${errMsg}`;
-      break;
+      throw new Error(`OpenRouter model error: ${errMsg}`);
     }
 
     // ── Success ──────────────────────────────────────────────────────────────
