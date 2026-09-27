@@ -87,7 +87,23 @@ export default function App() {
   const [showProposal, setShowProposal] = useState(true);
   const [customAccent] = useState<string>(localStorage.getItem('app-custom-accent') || '');
   const [customTextColor] = useState<string>(localStorage.getItem('app-custom-text') || '');
+  const [autoScroll, setAutoScroll] = useState<boolean>(() => localStorage.getItem('app-autoscroll') !== 'false');
+  const [devMode, setDevMode] = useState<boolean>(() => localStorage.getItem('app-devmode') === 'true');
   const transcriptRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    localStorage.setItem('app-autoscroll', String(autoScroll));
+  }, [autoScroll]);
+
+  useEffect(() => {
+    localStorage.setItem('app-devmode', String(devMode));
+  }, [devMode]);
+
+  useEffect(() => {
+    if (autoScroll && transcriptRef.current) {
+      transcriptRef.current.scrollTop = transcriptRef.current.scrollHeight;
+    }
+  }, [messages, thinking, autoScroll]);
 
   // ── IPC Subscriptions ─────────────────────────────────────────────────────
   useEffect(() => {
@@ -659,7 +675,60 @@ export default function App() {
             {activeSettingsTab === 'advanced' && (
               <div className="settings-section">
                 <h2>Advanced</h2>
-                <p style={{ fontSize: '13px', color: 'var(--text-1)' }}>Coming soon: Advanced developer toggles.</p>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginTop: '16px' }}>
+                  {/* Auto Scroll Toggle */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: 'var(--bg-1)', border: '1px solid var(--border)', borderRadius: '6px' }}>
+                    <div>
+                      <div style={{ fontSize: '14px', color: 'var(--text-0)', fontWeight: 500, marginBottom: '4px' }}>Auto-scroll Chat</div>
+                      <div style={{ fontSize: '12px', color: 'var(--text-1)' }}>Automatically scroll to the bottom when new messages arrive.</div>
+                    </div>
+                    <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                      <input 
+                        type="checkbox" 
+                        checked={autoScroll} 
+                        onChange={(e) => setAutoScroll(e.target.checked)} 
+                        style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: 'var(--accent)' }}
+                      />
+                    </label>
+                  </div>
+
+                  {/* Developer Mode Toggle */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: 'var(--bg-1)', border: '1px solid var(--border)', borderRadius: '6px' }}>
+                    <div>
+                      <div style={{ fontSize: '14px', color: 'var(--text-0)', fontWeight: 500, marginBottom: '4px' }}>Developer Mode</div>
+                      <div style={{ fontSize: '12px', color: 'var(--text-1)' }}>Enable verbose logging and advanced debugging options.</div>
+                    </div>
+                    <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                      <input 
+                        type="checkbox" 
+                        checked={devMode} 
+                        onChange={(e) => setDevMode(e.target.checked)} 
+                        style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: 'var(--accent)' }}
+                      />
+                    </label>
+                  </div>
+
+                  {/* Danger Zone */}
+                  <div style={{ marginTop: '12px', padding: '16px', background: 'var(--diff-del-bg)', border: '1px solid var(--red)', borderRadius: '6px' }}>
+                    <div style={{ fontSize: '14px', color: 'var(--red)', fontWeight: 600, marginBottom: '8px' }}>Danger Zone</div>
+                    <div style={{ fontSize: '13px', color: 'var(--text-1)', marginBottom: '16px' }}>
+                      Clear all local UI preferences, history, and active sessions. This will restart the application.
+                    </div>
+                    <button 
+                      onClick={() => {
+                        if (confirm('Are you sure? This will wipe all local data and reload the app.')) {
+                          localStorage.clear();
+                          window.location.reload();
+                        }
+                      }}
+                      style={{ padding: '8px 16px', background: 'var(--red)', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '13px', cursor: 'pointer', fontWeight: 500 }}
+                    >
+                      Clear Local Data
+                    </button>
+                  </div>
+
+                </div>
               </div>
             )}
 
