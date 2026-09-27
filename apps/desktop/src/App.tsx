@@ -85,7 +85,6 @@ export default function App() {
   const [activeTermId, setActiveTermId] = useState(1);
   const [splitView, setSplitView] = useState(false);
   const [showProposal, setShowProposal] = useState(true);
-  const [theme] = useState<string>(localStorage.getItem('app-theme') || 'dark');
   const [customAccent] = useState<string>(localStorage.getItem('app-custom-accent') || '');
   const [customTextColor] = useState<string>(localStorage.getItem('app-custom-text') || '');
   const transcriptRef = useRef<HTMLDivElement>(null);
