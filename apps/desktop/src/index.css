@@ -871,7 +871,7 @@ body {
   padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 .copilot-body::-webkit-scrollbar { width: 4px; }
 .copilot-body::-webkit-scrollbar-track { background: transparent; }
@@ -901,17 +901,50 @@ body {
   word-break: break-word;
 }
 
+/* ── Message row wrappers ── */
+.msg {
+  display: flex;
+  flex-direction: row;
+}
+.msg.user {
+  justify-content: flex-end;
+}
+.msg.assistant,
+.msg.system {
+  justify-content: flex-start;
+}
+
 /* ── User Bubble (in copilot) ── */
 .user-bubble {
+  width: fit-content;
+  max-width: 80%;
   background: linear-gradient(135deg, var(--accent), #9c6bef);
   color: #fff;
+  padding: 8px 12px;
+  border-radius: 16px 16px 4px 16px;
+  font-size: 13px;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+/* ── Assistant Bubble ── */
+.msg-bubble {
+  width: fit-content;
+  max-width: 92%;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  color: var(--text-0);
   padding: 10px 14px;
-  border-radius: 12px 12px 2px 12px;
+  border-radius: 4px 16px 16px 16px;
   font-size: 13px;
   line-height: 1.55;
-  align-self: flex-end;
-  max-width: 90%;
   word-break: break-word;
+}
+
+/* Strip trailing paragraph margin inside bubbles */
+.user-bubble p:last-child,
+.msg-bubble p:last-child {
+  margin-bottom: 0;
 }
 
 /* ── Empty State ── */
