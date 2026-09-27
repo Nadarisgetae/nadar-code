@@ -468,11 +468,11 @@ export default function App() {
                     {m.role === 'tool' ? (
                       <ToolCard msg={m} />
                     ) : m.role === 'user' ? (
-                      <div className="msg-bubble user-bubble">
+                      <div className="user-bubble">
                         <MarkdownRenderer content={m.content} />
                       </div>
                     ) : (
-                      <div className="msg-bubble">
+                      <div className="assistant-bubble">
                         <MarkdownRenderer content={m.content} />
                       </div>
                     )}
