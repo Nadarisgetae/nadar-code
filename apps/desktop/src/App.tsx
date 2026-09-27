@@ -85,8 +85,8 @@ export default function App() {
   const [activeTermId, setActiveTermId] = useState(1);
   const [splitView, setSplitView] = useState(false);
   const [showProposal, setShowProposal] = useState(true);
-  const [customAccent] = useState<string>(localStorage.getItem('app-custom-accent') || '');
-  const [customTextColor] = useState<string>(localStorage.getItem('app-custom-text') || '');
+  const [customAccent, setCustomAccent] = useState<string>(localStorage.getItem('app-custom-accent') || '');
+  const [customTextColor, setCustomTextColor] = useState<string>(localStorage.getItem('app-custom-text') || '');
   const [autoScroll, setAutoScroll] = useState<boolean>(() => localStorage.getItem('app-autoscroll') !== 'false');
   const [devMode, setDevMode] = useState<boolean>(() => localStorage.getItem('app-devmode') === 'true');
   const transcriptRef = useRef<HTMLDivElement>(null);
@@ -656,6 +656,25 @@ export default function App() {
               <div className="settings-section">
                 <h2>Appearance</h2>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '16px' }}>
+                  
+                  {/* Presets */}
+                  <div style={{ padding: '16px', background: 'var(--bg-1)', border: '1px solid var(--border)', borderRadius: '6px' }}>
+                    <div style={{ fontSize: '14px', color: 'var(--text-0)', fontWeight: 500, marginBottom: '4px' }}>UI Presets</div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-1)', marginBottom: '12px' }}>Apply a predefined look and layout configuration.</div>
+                    
+                    <button 
+                      onClick={() => {
+                        setTheme('dark');
+                        setCustomAccent('');
+                        setCustomTextColor('');
+                        setSplitView(false);
+                      }}
+                      style={{ padding: '8px 16px', background: 'var(--bg-2)', color: 'var(--text-0)', border: '1px solid var(--accent)', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', fontWeight: 500 }}
+                    >
+                      Preset 1: NadarCode Default
+                    </button>
+                  </div>
+
                   <div>
                     <label style={{ display: 'block', marginBottom: '8px', fontSize: '13px', color: 'var(--text-1)' }}>Color Theme</label>
                     <select 
