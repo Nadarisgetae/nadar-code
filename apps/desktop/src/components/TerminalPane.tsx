@@ -3,7 +3,7 @@ import { Terminal } from 'xterm';
 import { FitAddon } from 'xterm-addon-fit';
 import 'xterm/css/xterm.css';
 
-export default function TerminalPane() {
+export default function TerminalPane({ cwd }: { cwd?: string }) {
   const terminalRef = useRef<HTMLDivElement>(null);
   const termInstance = useRef<Terminal | null>(null);
   const fitAddon = useRef<FitAddon | null>(null);
@@ -44,7 +44,7 @@ export default function TerminalPane() {
       nadar.spawnTerminal();
 
       // Listen to output from the main process
-      nadar.onTerminalData((data: string) => {
+      const cleanupTerminalData = nadar.onTerminalData((data: string) => {
         term.write(data);
       });
 
@@ -64,10 +64,11 @@ export default function TerminalPane() {
       
       return () => {
         window.removeEventListener('resize', handleResize);
+        if (cleanupTerminalData) cleanupTerminalData();
         term.dispose();
       };
     }
-  }, []);
+  }, [cwd]);
 
   return (
     <div style={{ width: '100%', height: '100%', padding: '8px' }}>

@@ -288,7 +288,7 @@ export default function App() {
                     Terminal
                   </div>
                   <div style={{ flex: 1 }}>
-                    <TerminalPane />
+                    <TerminalPane cwd={config.cwd} />
                   </div>
                 </div>
               </Allotment.Pane>

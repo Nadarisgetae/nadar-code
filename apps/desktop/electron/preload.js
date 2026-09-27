@@ -41,6 +41,8 @@ contextBridge.exposeInMainWorld('nadar', {
   writeTerminal: (data) => ipcRenderer.send('terminal.write', data),
   resizeTerminal: (cols, rows) => ipcRenderer.send('terminal.resize', cols, rows),
   onTerminalData: (callback) => {
-    ipcRenderer.on('terminal.data', (_event, data) => callback(data));
+    const listener = (_event, data) => callback(data);
+    ipcRenderer.on('terminal.data', listener);
+    return () => ipcRenderer.removeListener('terminal.data', listener);
   },
 });
