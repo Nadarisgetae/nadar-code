@@ -50,6 +50,9 @@ export default function SlashMenu({ input, onSelect, onClose }: SlashMenuProps) 
   }, [query]);
 
   useEffect(() => {
+    // Only intercept keys if the menu is actually open
+    if (filtered.length === 0 || !input.startsWith('/')) return;
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'ArrowDown') {
         e.preventDefault();
@@ -68,7 +71,7 @@ export default function SlashMenu({ input, onSelect, onClose }: SlashMenuProps) 
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [filtered, selectedIndex, onSelect, onClose]);
+  }, [filtered, selectedIndex, onSelect, onClose, input]);
 
   if (filtered.length === 0 || !input.startsWith('/')) return null;
 
