@@ -182,6 +182,7 @@ ipcMain.handle('get-config', async () => {
     model: config?.model ?? '',
     cwd,
     keyCount: keyManager ? keyManager.keyCount() : 0,
+    maxToolIterationsPerTurn: config?.maxToolIterationsPerTurn ?? 25,
   };
 });
 
@@ -191,6 +192,13 @@ ipcMain.handle('set-mode', async (_event, mode) => {
   saveConfig(config);
   if (agent) agent.resetSystemPrompt();
   if (mainWindow) mainWindow.webContents.send('config-update', { mode });
+});
+
+ipcMain.handle('set-max-iterations', async (_event, maxToolIterationsPerTurn) => {
+  if (!config) return;
+  config.maxToolIterationsPerTurn = maxToolIterationsPerTurn;
+  saveConfig(config);
+  if (mainWindow) mainWindow.webContents.send('config-update', { maxToolIterationsPerTurn });
 });
 
 ipcMain.handle('set-model', async (_event, model) => {

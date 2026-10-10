@@ -33,6 +33,7 @@ interface AppConfig {
   model: string;
   cwd: string;
   keyCount: number;
+  maxToolIterationsPerTurn: number;
 }
 
 interface ModelInfo {
@@ -56,7 +57,7 @@ export default function App() {
   const [approvalReq, setApprovalReq] = useState<{ toolName: string; argsSummary: string } | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [activeSettingsTab, setActiveSettingsTab] = useState<'models' | 'appearance' | 'advanced' | 'plugins'>('models');
-  const [config, setConfig] = useState<AppConfig>({ mode: 'manual', model: '', cwd: '', keyCount: 0 });
+  const [config, setConfig] = useState<AppConfig>({ mode: 'manual', model: '', cwd: '', keyCount: 0, maxToolIterationsPerTurn: 25 });
   const [theme, setTheme] = useState(() => localStorage.getItem('app-theme') || 'dark');
   const [installedPlugins, setInstalledPlugins] = useState<{name: string, path: string, skillCount: number, commandCount: number}[]>([]);
 
@@ -223,7 +224,7 @@ export default function App() {
   // ── Commands ──────────────────────────────────────────────────────────────
   useEffect(() => {
     if (showCommandsModal) {
-      nadar?.getPluginCommands().then(cmds => {
+      nadar?.getPluginCommands().then((cmds: any) => {
         if (cmds) setPluginCommands(cmds);
       });
     }
@@ -712,6 +713,28 @@ export default function App() {
                     </label>
                   </div>
 
+                  {/* Max Iterations */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: 'var(--bg-1)', border: '1px solid var(--border)', borderRadius: '6px' }}>
+                    <div>
+                      <div style={{ fontSize: '14px', color: 'var(--text-0)', fontWeight: 500, marginBottom: '4px' }}>Max Tool Iterations Per Turn</div>
+                      <div style={{ fontSize: '12px', color: 'var(--text-1)' }}>Prevent the AI from infinite loops by setting a hard limit per turn.</div>
+                    </div>
+                    <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                      <input 
+                        type="number" 
+                        min="1"
+                        max="200"
+                        value={config.maxToolIterationsPerTurn} 
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value) || 25;
+                          setConfig(c => ({ ...c, maxToolIterationsPerTurn: val }));
+                          nadar?.setMaxIterations(val);
+                        }} 
+                        style={{ width: '60px', padding: '6px', background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: '4px', color: 'var(--text-0)', accentColor: 'var(--accent)' }}
+                      />
+                    </label>
+                  </div>
+
                   {/* Developer Mode Toggle */}
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: 'var(--bg-1)', border: '1px solid var(--border)', borderRadius: '6px' }}>
                     <div>
@@ -782,7 +805,7 @@ export default function App() {
                         if (url && url.trim() !== '') {
                           setShowSettings(false);
                           const cmdText = `Please clone and install the plugin from ${url} into my ~/.nadar-code/plugins/ directory. Make sure it's set up correctly.`;
-                          const userMsg = { id: Date.now().toString(), role: 'user', content: cmdText };
+                          const userMsg: Msg = { id: Date.now().toString(), role: 'user' as Role, content: cmdText };
                           setMessages(prev => [...prev, userMsg]);
                           setBusy(true);
                           inputEl.value = '';

@@ -32,6 +32,7 @@ contextBridge.exposeInMainWorld('nadar', {
   // Config & settings
   getConfig: () => ipcRenderer.invoke('get-config'),
   setMode: (mode) => ipcRenderer.invoke('set-mode', mode),
+  setMaxIterations: (max) => ipcRenderer.invoke('set-max-iterations', max),
   setModel: (model) => ipcRenderer.invoke('set-model', model),
   fetchModels: () => ipcRenderer.invoke('fetch-models'),
   getKeyStatus: () => ipcRenderer.invoke('get-key-status'),
