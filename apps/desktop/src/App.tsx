@@ -92,6 +92,11 @@ export default function App() {
   const [devMode, setDevMode] = useState<boolean>(() => localStorage.getItem('app-devmode') === 'true');
   const transcriptRef = useRef<HTMLDivElement>(null);
 
+  // ── Chat Context Menu ─────────────────────────────────────────────────────
+  const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; chatId: string; title: string } | null>(null);
+  const [renamingChatId, setRenamingChatId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState('');
+
   useEffect(() => {
     localStorage.setItem('app-autoscroll', String(autoScroll));
   }, [autoScroll]);
@@ -314,6 +319,36 @@ export default function App() {
     setActiveChatId(id);
   };
 
+  const handleDeleteChat = async (chatId: string) => {
+    setCtxMenu(null);
+    if (!confirm('Delete this chat? This cannot be undone.')) return;
+    const chats = await nadar?.deleteChat(chatId);
+    setChatHistory(chats || []);
+    if (chatId === activeChatId) {
+      if (chats && chats.length > 0) {
+        const msgs = await nadar?.switchChat(chats[0].id);
+        setMessages(msgs || []);
+        setActiveChatId(chats[0].id);
+      } else {
+        setMessages([]);
+        setActiveChatId('new');
+      }
+    }
+  };
+
+  const handleStartRename = (chatId: string, currentTitle: string) => {
+    setCtxMenu(null);
+    setRenamingChatId(chatId);
+    setRenameValue(currentTitle);
+  };
+
+  const handleConfirmRename = async (chatId: string) => {
+    if (!renameValue.trim()) { setRenamingChatId(null); return; }
+    const chats = await nadar?.renameChat(chatId, renameValue.trim());
+    setChatHistory(chats || []);
+    setRenamingChatId(null);
+  };
+
   const handleFileSelect = (filePath: string) => {
     if (!openFiles.includes(filePath)) {
       setOpenFiles(prev => [...prev, filePath]);
@@ -383,10 +418,31 @@ export default function App() {
                       <div 
                         key={chat.id} 
                         className={`thread-item ${activeChatId === chat.id ? 'active' : ''}`}
-                        onClick={() => handleSwitchChat(chat.id)}
+                        onClick={() => renamingChatId !== chat.id && handleSwitchChat(chat.id)}
+                        onContextMenu={(e) => {
+                          e.preventDefault();
+                          setCtxMenu({ x: e.clientX, y: e.clientY, chatId: chat.id, title: chat.title });
+                        }}
                       >
-                        <span className="thread-icon">✧</span> {chat.title}
-                        {activeChatId === chat.id && <span className="thread-badge run">RUN</span>}
+                        <span className="thread-icon">✧</span>
+                        {renamingChatId === chat.id ? (
+                          <input
+                            autoFocus
+                            className="chat-rename-input"
+                            value={renameValue}
+                            onChange={e => setRenameValue(e.target.value)}
+                            onKeyDown={e => {
+                              if (e.key === 'Enter') handleConfirmRename(chat.id);
+                              if (e.key === 'Escape') setRenamingChatId(null);
+                            }}
+                            onBlur={() => handleConfirmRename(chat.id)}
+                            onClick={e => e.stopPropagation()}
+                            style={{ background: 'var(--bg-3)', border: '1px solid var(--accent)', borderRadius: '3px', color: 'var(--text-0)', fontSize: '12px', padding: '1px 4px', width: '100%', outline: 'none' }}
+                          />
+                        ) : (
+                          chat.title
+                        )}
+                        {activeChatId === chat.id && renamingChatId !== chat.id && <span className="thread-badge run">RUN</span>}
                       </div>
                     ))}
                     {chatHistory.length === 0 && (
@@ -583,6 +639,35 @@ export default function App() {
         </div>
       </div>
       
+      {/* ── Chat Context Menu ── */}
+      {ctxMenu && (
+        <div
+          style={{ position: 'fixed', inset: 0, zIndex: 9999 }}
+          onClick={() => setCtxMenu(null)}
+          onContextMenu={(e) => { e.preventDefault(); setCtxMenu(null); }}
+        >
+          <div
+            className="chat-ctx-menu"
+            style={{ top: ctxMenu.y, left: ctxMenu.x }}
+            onClick={e => e.stopPropagation()}
+          >
+            <button
+              className="chat-ctx-item"
+              onClick={() => handleStartRename(ctxMenu.chatId, ctxMenu.title)}
+            >
+              ✏ Rename
+            </button>
+            <div className="chat-ctx-divider" />
+            <button
+              className="chat-ctx-item danger"
+              onClick={() => handleDeleteChat(ctxMenu.chatId)}
+            >
+              🗑 Delete
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ── Settings Panel ── */}
       {showSettings && (
         <div className="settings-overlay" onClick={() => setShowSettings(false)}>

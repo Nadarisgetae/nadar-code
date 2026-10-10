@@ -1251,3 +1251,51 @@ body {
 }
 .explorer-actions { display: flex; gap: 8px; font-size: 14px; cursor: pointer; }
 .goals-section { overflow-y: auto; }
+
+/* ── Chat Context Menu ── */
+.chat-ctx-menu {
+  position: fixed;
+  z-index: 10000;
+  min-width: 150px;
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 4px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.55), 0 2px 8px rgba(0,0,0,0.35);
+  animation: ctx-pop 0.1s ease;
+  backdrop-filter: blur(8px);
+}
+@keyframes ctx-pop {
+  from { opacity: 0; transform: scale(0.95) translateY(-4px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+.chat-ctx-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  background: none;
+  border: none;
+  border-radius: 5px;
+  color: var(--text-0);
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s;
+}
+.chat-ctx-item:hover {
+  background: var(--bg-4);
+}
+.chat-ctx-item.danger {
+  color: var(--red);
+}
+.chat-ctx-item.danger:hover {
+  background: var(--diff-del-bg);
+}
+.chat-ctx-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 3px 0;
+}

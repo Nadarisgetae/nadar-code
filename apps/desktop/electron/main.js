@@ -60,8 +60,15 @@ function listChats(projectCwd) {
   const chats = files.map(file => {
     const p = path.join(dir, file);
     const msgs = JSON.parse(fs.readFileSync(p, 'utf-8'));
-    const firstUserMsg = msgs.find(m => m.role === 'user');
-    const title = firstUserMsg ? firstUserMsg.content.slice(0, 30) + (firstUserMsg.content.length > 30 ? '...' : '') : 'New Chat';
+    const firstMsg = msgs[0];
+    // Respect renamed title if set, else derive from first user message
+    let title;
+    if (firstMsg?._title) {
+      title = firstMsg._title;
+    } else {
+      const firstUserMsg = msgs.find(m => m.role === 'user');
+      title = firstUserMsg ? firstUserMsg.content.slice(0, 30) + (firstUserMsg.content.length > 30 ? '...' : '') : 'New Chat';
+    }
     return { id: file.replace('.json', ''), title, timestamp: fs.statSync(p).mtimeMs };
   });
   return chats.sort((a, b) => b.timestamp - a.timestamp);
@@ -253,6 +260,27 @@ ipcMain.handle('clear-history', async () => {
   if (agent) agent.clearHistory();
   const p = path.join(historyDir(cwd), `${currentChatId}.json`);
   if (fs.existsSync(p)) fs.unlinkSync(p);
+});
+
+ipcMain.handle('delete-chat', async (_event, chatId) => {
+  const p = path.join(historyDir(cwd), `${chatId}.json`);
+  if (fs.existsSync(p)) fs.unlinkSync(p);
+  // If we deleted the active chat, clear the agent history too
+  if (chatId === currentChatId) {
+    currentChatId = Date.now().toString();
+    if (agent) agent.clearHistory();
+  }
+  return listChats(cwd);
+});
+
+ipcMain.handle('rename-chat', async (_event, chatId, newTitle) => {
+  const p = path.join(historyDir(cwd), `${chatId}.json`);
+  if (!fs.existsSync(p)) return listChats(cwd);
+  const msgs = JSON.parse(fs.readFileSync(p, 'utf-8'));
+  // Inject a special _title field as the first message's override
+  const updated = msgs.map((m, i) => i === 0 ? { ...m, _title: newTitle } : m);
+  fs.writeFileSync(p, JSON.stringify(updated, null, 2), 'utf-8');
+  return listChats(cwd);
 });
 
 ipcMain.handle('list-chats', async () => {

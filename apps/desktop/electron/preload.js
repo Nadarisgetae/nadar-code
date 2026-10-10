@@ -56,6 +56,8 @@ contextBridge.exposeInMainWorld('nadar', {
   listChats: () => ipcRenderer.invoke('list-chats'),
   switchChat: (chatId) => ipcRenderer.invoke('switch-chat', chatId),
   newChat: () => ipcRenderer.invoke('new-chat'),
+  deleteChat: (chatId) => ipcRenderer.invoke('delete-chat', chatId),
+  renameChat: (chatId, newTitle) => ipcRenderer.invoke('rename-chat', chatId, newTitle),
 
   // IDE Features
   listDir: (dirPath) => ipcRenderer.invoke('list-dir', dirPath),
